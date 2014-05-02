@@ -9,9 +9,9 @@ import tempfile
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 from multiprocessing import Pool
-
 from classes.ProgramRunner import *
 from classes.NHMMER_TO_ALI import *
+from classes.SAM_BUILDER import *
 
 
 
@@ -138,6 +138,11 @@ def find_csr(args, pool):
 
    logging.debug("Finished finding common shared regions between %s and %s" % (args.alignments_dir, args.genome))
 
+
+def inferSAM(args, pool):
+   sb = SAM_BUILDER(args)
+   sb.run()
+
 def consensus(args, pool):
    aliFiles = os.listdir(args.alis_dir)
    pool.map(runInstance, [ProgramRunner("addConsensus", [os.path.join(args.alis_dir, x), os.path.join(args.cons_output, x)] ) for x in aliFiles])
@@ -180,6 +185,17 @@ def main(argv):
     parser_mask.add_argument('-a', '--alis_dir',  required=True, help="Inut alignments directory")
     parser_mask.add_argument('-c', '--cons_output', required=True, type=makeDirOrdie, help="Output Consensus Directory")
     parser_mask.set_defaults(func=consensus)
+
+    # Build transitive SAM from MSA
+    parser_mask = subparsers.add_parser('inferSAM')
+    parser_mask.add_argument('-a', '--consensus_ali', required=True, help="Inut alignments directory: 1st record should be a consensus, starting with 'Con' in the id ")
+    parser_mask.add_argument('-s', '--split_sam_dir', required = True, help = 'Split SAM Files directory')
+    parser_mask.add_argument('-c', '--combined', type= bool, default=True, help = 'generate a combined sam file using Con as the reference. output file is named combined.sam')
+    parser_mask.add_argument('-o', '--output_dir', type=makeDirOrdie, help = 'Directory to which files will be writtena ')
+    parser_mask.add_argument('-n', '--nopile', type= bool, default= False, required = False, help = 'do not generate pile files')
+
+    parser_mask.set_defaults(func=inferSAM)
+    
 
     # Parse arguments
     args = parser.parse_args()
