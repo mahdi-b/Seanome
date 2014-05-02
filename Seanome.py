@@ -117,14 +117,16 @@ def find_seed_csr(args, pool):
     logging.debug("Finished finding seed common shared regions between %s and %s" % (args.input_1, args.input_2))
     
 def find_csr(args, pool):
-   tmpDir = tempfile.mkdtemp(prefix="seanome_", dir=".")
+   # TODOL
+   # validate the params
+   # throw error if program returns error
 
+   tmpDir = tempfile.mkdtemp(prefix="seanome_", dir=".")
    nhmmer_dir = os.path.join(tmpDir, "nhmmer_dir")
    os.mkdir(nhmmer_dir)
    aliFiles = os.listdir(args.alignments_dir)
    logging.debug("Finding %s alignments from  %s in ref %s: \n" % (len(aliFiles), args.alignments_dir, args.genome))
    pool.map(runInstance, [ProgramRunner("nhmmer", [os.path.join(args.alignments_dir, x), args.genome , os.path.join(nhmmer_dir,x.split(".")[0])] ) for x in aliFiles])
-   #pool.map(runInstance, [NHMMER_TO_ALI(os.path.join(args.alignments_dir, x), args.genome , os.path.join(nhmmer_dir,x.split(".")[0])) for x in aliFiles])
 
    logging.debug("Parsing outputs")
    nhmmerToAli = NHMMER_TO_ALI( args, args.alignments_dir, nhmmer_dir, args.genome, args.fasta_output)
@@ -134,10 +136,11 @@ def find_csr(args, pool):
    #Run mutiple sequence alignment 
    pool.map(runInstance, [ProgramRunner("muscle", [os.path.join(args.fasta_output, x), os.path.join(args.alis_output, x)] ) for x in aliFiles])
 
-
    logging.debug("Finished finding common shared regions between %s and %s" % (args.alignments_dir, args.genome))
 
-
+def consensus(args, pool):
+   aliFiles = os.listdir(args.alis_dir)
+   pool.map(runInstance, [ProgramRunner("addConsensus", [os.path.join(args.alis_dir, x), os.path.join(args.cons_output, x)] ) for x in aliFiles])
 
 def main(argv):
     parser = argparse.ArgumentParser(description="Seanome description", epilog="Seanome long text description")
@@ -171,6 +174,12 @@ def main(argv):
     parser_mask.add_argument('-l', '--min_csr_len', default=150, help=" Minimum common shared region length")
     parser_mask.add_argument('-s', '--min_csr_sim', default=0.88, help=" Minimum common shared region similarity")
     parser_mask.set_defaults(func=find_csr)
+
+    # consensus
+    parser_mask = subparsers.add_parser('consensus')
+    parser_mask.add_argument('-a', '--alis_dir',  required=True, help="Inut alignments directory")
+    parser_mask.add_argument('-c', '--cons_output', required=True, type=makeDirOrdie, help="Output Consensus Directory")
+    parser_mask.set_defaults(func=consensus)
 
     args = parser.parse_args()
     pool = Pool(processes=args.threads)

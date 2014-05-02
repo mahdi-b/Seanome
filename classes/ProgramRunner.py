@@ -8,6 +8,7 @@ PROGS_ROOT_bowtie2 = "~/programs/bowtie2-2.2.1/"
 PROGS_ROOT_lastz = "/home/mahdi/programs/lastz-distrib-1.02.00/src/"
 PROGS_ROOT_hmmer = "/home/mahdi/programs/hmmer-3.1b1-linux-intel-x86_64/binaries/"
 PROGS_ROOT_muscle = ""
+PROGS_ROOT_consensus = "/home/mahdi/work/tobo_lab/new_pipline/" # TEMPORARY
 
 
 LASTZ_OUTPUT_FORMAT = "general:name1,name2,text1,text2,score,strand1,strand2,start1,end1,start2,end2"
@@ -23,6 +24,7 @@ class ProgramRunner():
         "lastz" : PROGS_ROOT_lastz+"lastz %s %s --strand=both --identity=%s --format="+LASTZ_OUTPUT_FORMAT+" --masking=1  > %s",
         "nhmmer" : PROGS_ROOT_hmmer+"nhmmer  %s %s > %s",
         "muscle" : PROGS_ROOT_muscle+"muscle -in %s  -out %s",
+        "addConsensus" : "python "+PROGS_ROOT_consensus+"addConsensus.py %s %s", # tmp needs to be added in the code
         }
 
     def __init__(self, program, params):
