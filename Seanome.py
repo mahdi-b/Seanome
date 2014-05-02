@@ -181,6 +181,7 @@ def main(argv):
     parser_mask.add_argument('-c', '--cons_output', required=True, type=makeDirOrdie, help="Output Consensus Directory")
     parser_mask.set_defaults(func=consensus)
 
+    # Parse arguments
     args = parser.parse_args()
     pool = Pool(processes=args.threads)
     logging.debug("Initial ARGS are:")
