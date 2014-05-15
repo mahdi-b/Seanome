@@ -75,6 +75,9 @@ class NHMMER_TO_ALI():
             self.__ungapFastaFile__(os.path.join(self.initialAliDir, output), os.path.join(self.outFastaDir,output))
             if self.hitSeq:
                 SeqIO.write(self.hitSeq, open(os.path.join(self.outFastaDir,output), 'a'), 'fasta')
+                # reinitialize this to null
+                # BECAREFUL when running this in parallel
+                self.hitSeq=None
 
     def dryRun(self):
         pass

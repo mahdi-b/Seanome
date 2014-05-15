@@ -45,7 +45,7 @@ def maskFile(args,samFile):
    for ali in alis:
       tags =  dict(ali.tags)
         # if alignment hits with at least the minimum similarity, then mask the hit region                                                                                          
-      if tags['XM'] and (1 - float(tags['XM'])/int(ali.qlen) >= args.min_similarity):
+      if tags['NM'] and (1 - float(tags['NM'])/int(ali.qlen) >= args.min_similarity):
          # TODO: collect the intervals and do it at once since intervals overalap
          maskRange = (min(ali.positions), max(ali.positions))
          mseq[maskRange[0]: maskRange[1]+1] = "N" * (maskRange[1] - maskRange[0] +1)
@@ -89,7 +89,7 @@ def maskGenome(args, pool):
 
 def generateAlis(args, lastzOutFile):
     '''
-    Used in find_csr
+    Used in find_seed_csr
     '''
     inFile = open(lastzOutFile, 'r')
     outputDir= args.output_dir
@@ -99,16 +99,17 @@ def generateAlis(args, lastzOutFile):
         data = line.split()
         aliLength = min(len(data[2]),len(data[3]))
         simRatio = float(sum([data[2][i]==data[3][i] for i in range(len(data[2]))]))/ len(data[2])
-        if aliLength > args.min_csr_len and simRatio > args.min_csr_sim:
-            outFile = open(outputDir+"/outFile_%s_%s" % (str(outFileNum), str(aliLength)), 'w')
-            outFile.write( ">%s_%s_%s\n%s\n>%s_%s_%s\n%s\n" % (data[0],data[7],data[8],data[2],data[1],data[9], data[10],data[3],))
-            outFile.close()
-            outFileNum+=1
+        if aliLength >= args.min_csr_len and simRatio >= args.min_csr_sim:
+           outFile = open(outputDir+"/outFile_%s_%s" % (str(outFileNum), str(aliLength)), 'w')
+           outFile.write( ">%s_%s_%s\n%s\n>%s_%s_%s\n%s\n" % (data[0],data[7],data[8],data[2],data[1],data[9], data[10],data[3],))
+           outFile.close()
+           outFileNum+=1
     inFile.close()
     
 
 
 def find_seed_csr(args, pool):
+
     outName = os.path.splitext(os.path.basename(args.input_1))[0]+"_"+os.path.splitext(os.path.basename(args.input_2))[0]+".lastz"
     logging.debug("Finding seed common shared regions between %s and %s: \n Starting... " % (args.input_1, args.input_2))
     prog = ProgramRunner("lastz", [args.input_1, args.input_2, args.min_csr_sim, outName])
@@ -166,18 +167,18 @@ def main(argv):
     parser_mask.add_argument('-i1', '--input_1',  required=True, help="First input contig")
     parser_mask.add_argument('-i2', '--input_2', required=True, help="Second input contig")
     parser_mask.add_argument('-o', '--output_dir', type=makeDirOrdie, required=True, help=" Minimum common shared region similarity")
-    parser_mask.add_argument('-l', '--min_csr_len', default=150, help=" Minimum common shared region length")
-    parser_mask.add_argument('-s', '--min_csr_sim', default=0.88, help=" Minimum common shared region similarity")
+    parser_mask.add_argument('-l', '--min_csr_len', type=int, default=150, help=" Minimum common shared region length")
+    parser_mask.add_argument('-s', '--min_csr_sim', type=float, default=0.88, help=" Minimum common shared region similarity")
     parser_mask.set_defaults(func=find_seed_csr)
 
-    # seed_csr
+    # csr
     parser_mask = subparsers.add_parser('find_csr')
     parser_mask.add_argument('-a', '--alignments_dir',  required=True, help="Inut alignments directory")
     parser_mask.add_argument('-g', '--genome', required=True, help="Reference genome")
     parser_mask.add_argument('-f', '--fasta_output', required=True, type=makeDirOrdie, help="fasata sequences output")
     parser_mask.add_argument('-o', '--alis_output', required=True, type=makeDirOrdie, help="fasata sequences output")
-    parser_mask.add_argument('-l', '--min_csr_len', default=150, help=" Minimum common shared region length")
-    parser_mask.add_argument('-s', '--min_csr_sim', default=0.88, help=" Minimum common shared region similarity")
+    parser_mask.add_argument('-l', '--min_csr_len', type=int, default=150, help=" Minimum common shared region length")
+    parser_mask.add_argument('-s', '--min_csr_sim', type=float, default=0.88, help=" Minimum common shared region similarity")
     parser_mask.set_defaults(func=find_csr)
 
     # consensus
@@ -205,6 +206,7 @@ def main(argv):
     args.func(args, pool)
 
 if __name__ == "__main__":
+   # test
    version = "alpha 0.01"
    FORMAT = "%(asctime)-15s  %(message)s"
    logging.basicConfig(format=FORMAT, level=logging.DEBUG)
